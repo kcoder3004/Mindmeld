@@ -20,18 +20,19 @@ guesses = {}
 
 @socketio.on('connect')
 def handle_connect():
-    print('Client connected')
+    print(f"Client connected: {request.sid}")
     theme = random.choice(themes)
     emit('theme', theme)
 
 @socketio.on('submit_word')
-def handle_word(data):
+def handle_word(word):
     sid = request.sid
-    word = data.strip().lower()
+    word = word.strip().lower()
     if sid not in guesses:
         guesses[sid] = []
     guesses[sid].append(word)
 
+    # Check for matches
     for other_sid, words in guesses.items():
         if other_sid != sid and word in words:
             emit('match', word, broadcast=True)
@@ -45,5 +46,5 @@ def restart_game():
     theme = random.choice(themes)
     emit('theme', theme, broadcast=True)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     socketio.run(app, port=5000)

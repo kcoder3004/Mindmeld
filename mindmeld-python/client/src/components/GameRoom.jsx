@@ -1,91 +1,56 @@
-import React, { useEffect, useState } from 'react';
-import socket from '../socketManager';
+import React, { useState } from "react";
 
-const GameRoom = () => {
-  const [theme, setTheme] = useState('');
-  const [guess, setGuess] = useState('');
-  const [guesses, setGuesses] = useState([]);
-  const [match, setMatch] = useState(null);
+export default function GameRoom({ theme, guesses, matchWord, onSubmit, onRestart, socketId }) {
+  const [input, setInput] = useState("");
 
-  useEffect(() => {
-    socket.on('theme', (newTheme) => {
-      setTheme(newTheme);
-    });
-
-    socket.on('new_guess', ({ id, word }) => {
-      setGuesses((prev) => [...prev, { id, word }]);
-    });
-
-    socket.on('match', (matchedWord) => {
-      setMatch(matchedWord);
-    });
-
-    return () => {
-      socket.off('theme');
-      socket.off('new_guess');
-      socket.off('match');
-    };
-  }, []);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (guess.trim()) {
-      socket.emit('submit_word', guess);
-      setGuess('');
-    }
-  };
-
-  const handleRestart = () => {
-    socket.emit('restart_game');
-    setGuesses([]);
-    setMatch(null);
-  };
+  function submitGuess() {
+    if (!input.trim()) return;
+    onSubmit(input.trim());
+    setInput("");
+  }
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold text-center mb-4">🧠 MindMeld</h1>
-      <h2 className="text-lg font-semibold mb-4">
-        🎯 Theme: <span className="text-blue-600">{theme}</span>
-      </h2>
+    <div className="max-w-2xl mx-auto p-6 bg-white rounded shadow mt-8">
+      <h2 className="text-3xl font-semibold mb-4">Theme: <span className="text-blue-600">{theme}</span></h2>
 
-      <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
+      <div className="flex mb-4">
         <input
           type="text"
-          value={guess}
-          onChange={(e) => setGuess(e.target.value)}
-          placeholder="Enter a word..."
-          className="flex-grow border border-gray-300 p-2 rounded"
+          className="flex-grow border border-gray-300 rounded px-3 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          placeholder="Enter your guess"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submitGuess()}
         />
         <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          onClick={submitGuess}
+          className="bg-blue-600 text-white px-4 rounded hover:bg-blue-700"
         >
           Submit
         </button>
-      </form>
+      </div>
 
-      {match && (
-        <div className="bg-green-100 text-green-700 p-2 rounded mb-4">
-          🎉 Match found: <strong>{match}</strong>
+      {matchWord && (
+        <div className="p-4 mb-4 bg-green-100 text-green-800 rounded font-semibold">
+          🎉 Match found: <span className="underline">{matchWord}</span>
         </div>
       )}
 
       <button
-        onClick={handleRestart}
-        className="bg-red-500 text-white px-4 py-2 rounded mb-4"
+        onClick={onRestart}
+        className="mb-4 bg-gray-300 px-3 py-1 rounded hover:bg-gray-400"
       >
-        🔄 Restart Game
+        Restart Game
       </button>
 
-      <ul className="bg-white shadow rounded p-4">
-        {guesses.map((g, i) => (
-          <li key={i} className="border-b py-1 text-gray-700">
-            {g.id.slice(0, 6)}: {g.word}
+      <h3 className="text-xl font-medium mb-2">Guesses so far:</h3>
+      <ul className="list-disc pl-5 max-h-64 overflow-y-auto">
+        {guesses.map(({ id, word }, i) => (
+          <li key={i} className={id === socketId ? "font-bold" : ""}>
+            {id === socketId ? "You" : "Player"} guessed: {word}
           </li>
         ))}
       </ul>
     </div>
   );
-};
-
-export default GameRoom;
+}

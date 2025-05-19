@@ -1,12 +1,15 @@
-import React from 'react';
+import React from "react";
 
-const LandingPage = () => {
+export default function LandingPage() {
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
-      <h1 className="text-4xl font-bold mb-4">Welcome to MindMeld 🧠</h1>
-      <p className="text-lg">Click to start playing with your friends!</p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+      <h1 className="text-5xl font-bold mb-4">Welcome to MindMeld</h1>
+      <p className="text-lg max-w-md text-center mb-8">
+        Connect with friends and guess the words to find matches!
+      </p>
+      <p className="text-sm text-gray-600">
+        Connecting to server...
+      </p>
     </div>
   );
-};
-
-export default LandingPage;
+}
