@@ -1,50 +1,53 @@
 from flask import Flask, request
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
-import random
+import gamelogic
 
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-themes = [
-    "Space", "Food", "Technology", "Movies", "Books",
-    "Animals", "Nature", "History", "Fashion", "Art",
-    "Mythology", "Slang", "Emotions", "Colors", "Travel",
-    "Music", "Careers", "Cities", "Sports", "Science",
-    "Hobbies", "Games", "Social Media", "Seasons", "School",
-    "Superheroes", "Dreams", "Magic", "Vehicles", "Brands"
-]
-
 guesses = {}
+
+def log_state():
+    print(f"Current theme: {gamelogic.current_theme}")
+    print(f"Secret word: {gamelogic.secret_word}")
+    print(f"Guesses so far: {guesses}")
 
 @socketio.on('connect')
 def handle_connect():
     print(f"Client connected: {request.sid}")
-    theme = random.choice(themes)
-    emit('theme', theme)
+    # On connect, send current theme
+    emit('theme', gamelogic.current_theme)
+    log_state()
 
 @socketio.on('submit_word')
-def handle_word(word):
+def handle_word(data):
     sid = request.sid
-    word = word.strip().lower()
+    guess = data.strip().lower()
+    print(f"Received guess from {sid}: {guess}")
     if sid not in guesses:
         guesses[sid] = []
-    guesses[sid].append(word)
+    guesses[sid].append(guess)
 
-    # Check for matches
-    for other_sid, words in guesses.items():
-        if other_sid != sid and word in words:
-            emit('match', word, broadcast=True)
-            return
-
-    emit('new_guess', {'id': sid, 'word': word}, broadcast=True)
+    if gamelogic.check_guess(guess, gamelogic.secret_word):
+        print(f"Match found! Player {sid} guessed the secret word: {guess}")
+        emit('match', {'word': guess, 'player': sid}, broadcast=True)
+    else:
+        emit('new_guess', {'id': sid, 'word': guess}, broadcast=True)
+    
+    log_state()
 
 @socketio.on('restart_game')
 def restart_game():
+    global guesses
+    print(f"Game restart requested by {request.sid}")
     guesses.clear()
-    theme = random.choice(themes)
-    emit('theme', theme, broadcast=True)
+    gamelogic.pick_new_word()
+    emit('theme', gamelogic.current_theme, broadcast=True)
+    log_state()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
+    gamelogic.pick_new_word()
+    print(f"Starting server with theme: {gamelogic.current_theme} and word: {gamelogic.secret_word}")
     socketio.run(app, port=5000)
