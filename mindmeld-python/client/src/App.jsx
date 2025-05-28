@@ -1,17 +1,13 @@
 import React, { useState } from "react";
-import GameRoom from "./components/GameRoom";
 import LandingPage from "./components/LandingPage";
+import GameRoom from "./components/GameRoom";
 
 export default function App() {
-  const [inGame, setInGame] = useState(false);
+  const [started, setStarted] = useState(false);
 
   return (
-    <div className="app-container">
-      {inGame ? (
-        <GameRoom onLeave={() => setInGame(false)} />
-      ) : (
-        <LandingPage onStart={() => setInGame(true)} />
-      )}
-    </div>
+    <>
+      {!started ? <LandingPage onStart={() => setStarted(true)} /> : <GameRoom />}
+    </>
   );
 }
